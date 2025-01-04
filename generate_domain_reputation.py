@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import time
 
 # Input your VirusTotal API key here
 API_KEY = "ce36dd5b275914ab8fc9796e8484b1182524ad392d740e3d8cb2a7c5e825e0c2"
@@ -15,6 +16,10 @@ unique_domains = data["domain"].unique()[
 # Prepare lists for storing results
 domains = []
 credibility_scores = []
+
+# API request rate limit settings
+RATE_LIMIT = 4  # Requests per minute
+DELAY = 60 / RATE_LIMIT  # Delay between requests
 
 # Fetch credibility scores
 for domain in unique_domains:
@@ -38,10 +43,9 @@ for domain in unique_domains:
         # Extract reputation score
         if "data" in json_response:
             reputation = json_response["data"]["attributes"]["reputation"]
-            print(reputation)
             score = 1 if reputation < 0 else 0  # 1 = Malicious, 0 = Benign
         else:
-            score = 0
+            score = -1
 
         # Append results
         domains.append(domain)
@@ -52,6 +56,9 @@ for domain in unique_domains:
         print("Error occurred for domain:", e)
         domains.append(domain)
         credibility_scores.append(0)  # Default to benign on errors
+    
+    # Enforce rate limiting
+    time.sleep(DELAY)
 
 # Create DataFrame with results
 credibility_df = pd.DataFrame({"Domain": domains, "Credibility": credibility_scores})
