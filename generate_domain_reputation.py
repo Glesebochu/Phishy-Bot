@@ -12,8 +12,8 @@ ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 # Load dataset with domains
 data = pd.read_csv("Yan's_Domains.csv") 
 
-# Extract domains
-domains = data["domain"]
+# Extract all domains (not just unique ones)
+domains_list = data["domain"]
 
 # Prepare lists for storing results
 domains = []
@@ -34,7 +34,7 @@ if os.path.exists(LAST_REQUEST_FILE):
         time.sleep(DELAY - elapsed_time)
 
 # Fetch credibility scores
-for count, domain in enumerate(domains, start=1):
+for count, domain in enumerate(domains_list, start=1):
     try:
         # Determine if input is an IP or domain
         url = ip_url if domain.replace('.', '').isdigit() else domain_url
@@ -74,14 +74,14 @@ for count, domain in enumerate(domains, start=1):
         # Handle errors
         print(f"Error occurred for {domain}: {e}")
 
-    # Enforce rate limiting
+    # Enforce rate limiting after processing 4 requests
     if count % RATE_LIMIT == 0:
         time.sleep(DELAY)
         # Update the last request time
         with open(LAST_REQUEST_FILE, "w") as file:
             file.write(str(time.time()))
     # Print progress
-    print(f"Processed {count}/{len(domains)}: {domain} -> {score}\n")
+    print(f"Processed {count}/{len(domains_list)}: {domain} -> {score}\n")
 
 # Create DataFrame with results
 credibility_df = pd.DataFrame({"domain": domains, "credibility": credibility_scores, "security_vendors": vendors})
