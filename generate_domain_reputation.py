@@ -13,7 +13,7 @@ ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 data = pd.read_csv("Yan's_Domains.csv") 
 
 # Extract unique domains
-unique_domains = data["domain"].unique()[:5] 
+unique_domains = data["domain"].unique() 
 
 # Prepare lists for storing results
 domains = []
