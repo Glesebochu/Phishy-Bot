@@ -5,7 +5,7 @@ import os
 import json
 
 # Input your VirusTotal API key here
-API_KEY = "ce36dd5b275914ab8fc9796e8484b1182524ad392d740e3d8cb2a7c5e825e0c2"
+API_KEY = "1cdf6710f09c0cde4ed50abfc56890b9f3c81701a242913883260538ecf05c54"
 domain_url = "https://www.virustotal.com/api/v3/domains/"
 ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 
@@ -13,7 +13,7 @@ ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 data = pd.read_csv("Yan's_Domains.csv") 
 
 # Extract all domains (not just unique ones)
-domains_list = data["domain"][:5]
+domains_list = data["domain"][:465]
 
 # Prepare lists for storing results
 domains = []
@@ -48,8 +48,8 @@ for count, domain in enumerate(domains_list, start=1):
         else:
             # Invalid domain or IP, mark as suspicious
             domains.append(domain)
-            credibility_scores.append(1)  # Score 1 for invalid entries
-            vendors.append(0)
+            credibility_scores.append("invalid")  # Score 1 for invalid entries
+            vendors.append("invalid")
             print(f"Invalid domain or IP: {domain}")
             continue
         
@@ -91,12 +91,13 @@ for count, domain in enumerate(domains_list, start=1):
 
     # Enforce rate limiting after processing 4 requests
     if count % RATE_LIMIT == 0:
+        print(f"Applying Delay...\n")
         time.sleep(DELAY)
         # Update the last request time
         with open(LAST_REQUEST_FILE, "w") as file:
             file.write(str(time.time()))
     # Print progress
-    print(f"Processed {count}/{len(domains_list)}: {domain} -> {score}\n")
+    print(f"Processed {count}/{len(domains_list)}: {domain} -> {score}, {malicius_count}\n")
 
 # Create DataFrame with results
 credibility_df = pd.DataFrame({"domain": domains, "credibility": credibility_scores, "security_vendors": vendors})
