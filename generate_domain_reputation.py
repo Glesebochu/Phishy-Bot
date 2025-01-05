@@ -13,7 +13,7 @@ ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 data = pd.read_csv("Yan's_Domains.csv") 
 
 # Extract all domains (not just unique ones)
-domains_list = data["domain"]
+domains_list = data["domain"][:5]
 
 # Prepare lists for storing results
 domains = []
@@ -36,9 +36,23 @@ if os.path.exists(LAST_REQUEST_FILE):
 # Fetch credibility scores
 for count, domain in enumerate(domains_list, start=1):
     try:
-        # Determine if input is an IP or domain
-        url = ip_url if domain.replace('.', '').isdigit() else domain_url
+        # Handle cases with and without a port
+        if ':' in domain:
+            domain = domain.split(':')[0]  # Keep only the part before the colon
 
+        # Determine if input is an IP or domain
+        if domain.replace('.', '').isdigit():
+            url = ip_url
+        elif '.' in domain:  # Valid domain pattern check
+            url = domain_url
+        else:
+            # Invalid domain or IP, mark as suspicious
+            domains.append(domain)
+            credibility_scores.append(1)  # Score 1 for invalid entries
+            vendors.append(0)
+            print(f"Invalid domain or IP: {domain}")
+            continue
+        
         headers = {"x-apikey": API_KEY}
         response = requests.get(url + domain, headers=headers)
 
@@ -62,7 +76,8 @@ for count, domain in enumerate(domains_list, start=1):
             print(f"Analysis:{analysis_stats}")
             score = 1 if malicius_count > 0 else 0  # 1 = Malicious, 0 = Benign
         else:
-            score = response.text
+            score = "empty"
+            malicius_count= "empty" 
             print(f"No data found for domain: {domain}")
 
         # Append results
