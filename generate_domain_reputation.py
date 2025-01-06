@@ -10,7 +10,7 @@ domain_url = "https://www.virustotal.com/api/v3/domains/"
 ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 
 # Load dataset with domains
-data = pd.read_csv("Yan's_Domains.csv") 
+data = pd.read_csv("Yan's_Domains.csv")
 
 # Extract all domains (not just unique ones)
 domains_list = data["domain"][:20]
@@ -48,13 +48,13 @@ for count, domain in enumerate(domains_list, start=1):
 
     try:
         # Handle cases with and without a port
-        if ':' in domain:
-            domain = domain.split(':')[0]  # Keep only the part before the colon
+        if ":" in domain:
+            domain = domain.split(":")[0]  # Keep only the part before the colon
 
         # Determine if input is an IP or domain
-        if domain.replace('.', '').isdigit():
+        if domain.replace(".", "").isdigit():
             url = ip_url
-        elif '.' in domain:  # Valid domain pattern check
+        elif "." in domain:  # Valid domain pattern check
             url = domain_url
         else:
             # Invalid domain or IP, mark as suspicious
@@ -63,12 +63,12 @@ for count, domain in enumerate(domains_list, start=1):
             credibility_scores.append(-1)  # -1 for invalid entries
             vendors.append(-1)
             continue
-        
+
         headers = {"x-apikey": API_KEY}
         response = requests.get(url + domain, headers=headers)
 
         try:
-            json_response = response.json()        
+            json_response = response.json()
         except json.decoder.JSONDecodeError:
             print("Invalid JSON response received")
             json_response = {}  # Handle as empty response
@@ -83,7 +83,7 @@ for count, domain in enumerate(domains_list, start=1):
         # Extract reputation score
         if "data" in json_response:
             analysis_stats = json_response["data"]["attributes"]["last_analysis_stats"]
-            malicius_count = analysis_stats.get('malicious', 0)
+            malicius_count = analysis_stats.get("malicious", 0)
             score = 1 if malicius_count > 0 else 0  # 1 = Malicious, 0 = Benign
         else:
             score = -1  # Treat as invalid
@@ -107,10 +107,14 @@ for count, domain in enumerate(domains_list, start=1):
         with open(LAST_REQUEST_FILE, "w") as file:
             file.write(str(time.time()))
     # Print progress
-    print(f"Processed {count}/{len(domains_list)}: {domain} -> {score}, {malicius_count}\n")
+    print(
+        f"Processed {count}/{len(domains_list)}: {domain} -> {score}, {malicius_count}\n"
+    )
 
 # Create DataFrame with new results
-credibility_df = pd.DataFrame({"domain": domains, "credibility": credibility_scores, "security_vendors": vendors})
+credibility_df = pd.DataFrame(
+    {"domain": domains, "credibility": credibility_scores, "security_vendors": vendors}
+)
 
 # Append new data to existing data
 updated_data = pd.concat([existing_data, credibility_df], ignore_index=True)
