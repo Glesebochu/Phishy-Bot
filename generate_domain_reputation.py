@@ -5,7 +5,7 @@ import os
 import json
 
 # Input your VirusTotal API key here
-API_KEY = "ce36dd5b275914ab8fc9796e8484b1182524ad392d740e3d8cb2a7c5e825e0c2"
+API_KEY = "1cdf6710f09c0cde4ed50abfc56890b9f3c81701a242913883260538ecf05c54"
 domain_url = "https://www.virustotal.com/api/v3/domains/"
 ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 
@@ -13,7 +13,7 @@ ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 data = pd.read_csv("Yan's_Domains.csv")
 
 # Extract all domains (not just unique ones)
-domains_list = data["domain"][]
+domains_list = data["domain"][:500]
 
 # Check if previous results exist
 if os.path.exists("Credibility_scores.csv"):
@@ -72,13 +72,18 @@ for count, domain in enumerate(domains_list, start=1):
         except json.decoder.JSONDecodeError:
             print("Invalid JSON response received")
             json_response = {}  # Handle as empty response
-        if response.status_code != 200:
-            if response.status_code == 401:
-                print("Unauthorized: Check your API Key")
-            elif response.status_code == 429:
-                print("Rate limit exceeded. Try again later.")
-            elif response.status_code == 400:
-                print(f"Bad request for domain: {domain}, {response.text}")
+        # Handle response codes
+        if response.status_code == 401:
+            print("Unauthorized: Check your API Key")
+            break
+        elif response.status_code == 429:
+            print("Rate limit exceeded. Saving progress and stopping...")
+            break
+        elif response.status_code == 400:
+            print(f"Bad request for domain: {domain}, {response.text}")
+        elif response.status_code != 200:
+            print(f"Unexpected error {response.status_code}. Stopping...")
+            break
 
         # Extract reputation score
         if "data" in json_response:
