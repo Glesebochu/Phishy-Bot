@@ -3,9 +3,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
-
 # Load the dataset
-data = pd.read_csv('Unprocessed_URL_Dataset.csv')  
+data = pd.read_csv('URL-dataset.csv')  
 
 # Normalize column names
 data.columns = data.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -18,25 +17,56 @@ data = data.dropna(subset=required_columns)  # Drop rows with missing required c
 # Convert 'is_malicious' column from TRUE/FALSE to 1/0
 data['is_malicious'] = data['is_malicious'].map({'TRUE': 1, 'FALSE': 0})
 
-# Convert 'has_ip_address' and 'has_special_char' columns from yes/no to 1/0
-data['has_ip_address'] = data['has_ip_address'].map({'yes': 1, 'no': 0})
-data['has_special_char'] = data['has_special_char'].map({'yes': 1, 'no': 0})
+# Drop rows with NaN values in 'is_malicious'
+data = data.dropna(subset=['is_malicious'])
+
+# Convert 'has_ip_address' and 'has_special_char' from 'yes/no' to 1/0
+boolean_columns = ['has_ip_address', 'has_special_char']
+for col in boolean_columns:
+    data[col] = data[col].map({'Yes': 1, 'No': 0})
+    data[col] = pd.to_numeric(data[col], errors='coerce')
+
+# Drop rows where boolean columns contain NaN
+data = data.dropna(subset=boolean_columns)
 
 # Ensure numerical columns are of the correct data type
-numerical_columns = ['length', 'num_subdomains', 'has_ip_address', 'has_special_char']
+numerical_columns = ['length', 'num_subdomains']
+scaler = MinMaxScaler()
+
+# Convert numerical columns to numeric type and handle invalid values
 for col in numerical_columns:
     data[col] = pd.to_numeric(data[col], errors='coerce')
 
-# Drop rows with invalid numerical data (non-numeric entries converted to NaN)
+# Check for any rows with NaN in numerical columns before scaling
+if data[numerical_columns].isnull().any().any():
+    print("There are still NaN values in the numerical columns after conversion.")
+    print(data[numerical_columns].isnull().sum())
+else:
+    print("Numerical columns have no NaN values.")
+
+# Drop rows with invalid numerical data (NaN values in numerical columns)
 data = data.dropna(subset=numerical_columns)
 
-# Normalize 'length' and 'num_subdomains' columns
-scaler = MinMaxScaler()
-data[['length', 'num_subdomains']] = scaler.fit_transform(data[['length', 'num_subdomains']])
+# Check if the dataset is empty after dropping NaN rows
+if data.empty:
+    print("No valid data available after preprocessing. Exiting.")
+    exit()
 
-# Split the data into training, validation, and test sets (70% train, 15% validation, 15% test)
-train_data, temp_data = train_test_split(data, test_size=0.3, stratify=data['is_malicious'], random_state=42)
-val_data, test_data = train_test_split(temp_data, test_size=0.5, stratify=temp_data['is_malicious'], random_state=42)
+# Apply MinMaxScaler
+data[numerical_columns] = scaler.fit_transform(data[numerical_columns])
+
+# Check if the dataset is empty after scaling
+if data.empty:
+    print("Dataset is empty after scaling. Exiting.")
+    exit()
+
+# Split the data into train, test, and validation sets
+train_data, temp_data = train_test_split(
+    data, test_size=0.3, stratify=data['is_malicious'], random_state=42
+)
+val_data, test_data = train_test_split(
+    temp_data, test_size=0.5, stratify=temp_data['is_malicious'], random_state=42
+)
 
 # Populate the 'split' column
 train_data['split'] = 'training'
@@ -80,10 +110,9 @@ print(classification_report(y_test, test_predictions))
 # Accuracy score for comparison
 val_accuracy = accuracy_score(y_val, val_predictions)
 test_accuracy = accuracy_score(y_test, test_predictions)
-
 print(f"Validation Accuracy: {val_accuracy:.4f}")
 print(f"Test Accuracy: {test_accuracy:.4f}")
 
 # Save the processed dataset with the 'split' column
-processed_data.to_csv('Processed_URL_Dataset.csv', index=False)
+processed_data.to_csv('Processed_URL_DatasetV2.csv', index=False)
 print("Processed dataset saved as 'Processed_URL_Dataset.csv'.")
