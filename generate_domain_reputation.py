@@ -13,7 +13,7 @@ ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 data = pd.read_csv("Yan's_Domains.csv")
 
 # Extract all domains (not just unique ones)
-domains_list = data["domain"]
+domains_list = data["domain"][:500]
 
 # Check if previous results exist
 if os.path.exists("Credibility_scores.csv"):
