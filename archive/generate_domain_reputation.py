@@ -5,15 +5,19 @@ import os
 import json
 
 # Input your VirusTotal API key here
-API_KEY = "ce36dd5b275914ab8fc9796e8484b1182524ad392d740e3d8cb2a7c5e825e0c2"
+API_KEY = "7f6e1be867d546cf02b19251ca60e7973706c9966354286b8c7b209fcf5e0cb6"
 domain_url = "https://www.virustotal.com/api/v3/domains/"
 ip_url = "https://www.virustotal.com/api/v3/ip_addresses/"
 
 # Load dataset with domains
-data = pd.read_csv("Yan's_Domains.csv")
+data = pd.read_csv("Dave's_Domains.csv")
 
 # Extract all domains (not just unique ones)
+<<<<<<< HEAD:generate_domain_reputation.py
 domains_list = data["domain"][:500]
+=======
+domains_list = data["domain"][935: 1435]
+>>>>>>> 1490095de95869d987b2099be36d0e41dd157c92:archive/generate_domain_reputation.py
 
 # Check if previous results exist
 if os.path.exists("Credibility_scores.csv"):
