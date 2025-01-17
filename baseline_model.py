@@ -1,118 +1,106 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import classification_report, accuracy_score
-from sklearn.model_selection import train_test_split
+
 # Load the dataset
-data = pd.read_csv('URL-dataset.csv')  
+data = pd.read_csv('Preprocessed_URL_Dataset.csv')
 
 # Normalize column names
 data.columns = data.columns.str.strip().str.lower().str.replace(' ', '_')
 
-# Handle missing or erroneous values
-required_columns = ['url', 'is_malicious', 'domain', 'has_ip_address', 'path', 
-                    'length', 'num_subdomains', 'has_special_char', 'tld']
-data = data.dropna(subset=required_columns)  # Drop rows with missing required columns
+# Verify required columns
+required_columns = ['length', 'num_subdomains', 'has_ip_address', 'is_malicious', 'split']
+missing_columns = [col for col in required_columns if col not in data.columns]
+if missing_columns:
+    raise ValueError(f"The following required columns are missing from the dataset: {missing_columns}")
 
-# Convert 'is_malicious' column from TRUE/FALSE to 1/0
-data['is_malicious'] = data['is_malicious'].map({'TRUE': 1, 'FALSE': 0})
+# Print unique values in is_malicious column for debugging
+print("Unique values in is_malicious column:", data['is_malicious'].unique())
 
-# Drop rows with NaN values in 'is_malicious'
-data = data.dropna(subset=['is_malicious'])
+# Convert is_malicious to numeric
+def convert_to_binary(value):
+    if isinstance(value, bool):
+        return 1 if value else 0
+    elif isinstance(value, str):
+        return 1 if value.lower() == 'true' else 0
+    elif isinstance(value, (int, float)):
+        return 1 if value == 1 or value == 1.0 else 0
+    return None
 
-# Convert 'has_ip_address' and 'has_special_char' from 'yes/no' to 1/0
-boolean_columns = ['has_ip_address', 'has_special_char']
-for col in boolean_columns:
-    data[col] = data[col].map({'Yes': 1, 'No': 0})
-    data[col] = pd.to_numeric(data[col], errors='coerce')
+data['is_malicious'] = data['is_malicious'].apply(convert_to_binary)
 
-# Drop rows where boolean columns contain NaN
-data = data.dropna(subset=boolean_columns)
+# Verify conversion
+print("Unique values after conversion:", data['is_malicious'].unique())
 
-# Ensure numerical columns are of the correct data type
-numerical_columns = ['length', 'num_subdomains']
-scaler = MinMaxScaler()
+# Ensure 'has_ip_address' is numeric
+data['has_ip_address'] = pd.to_numeric(data['has_ip_address'], errors='coerce')
 
-# Convert numerical columns to numeric type and handle invalid values
-for col in numerical_columns:
-    data[col] = pd.to_numeric(data[col], errors='coerce')
+# Handle missing or invalid rows
+initial_row_count = len(data)
+data = data.dropna(subset=required_columns)
+final_row_count = len(data)
 
-# Check for any rows with NaN in numerical columns before scaling
-if data[numerical_columns].isnull().any().any():
-    print("There are still NaN values in the numerical columns after conversion.")
-    print(data[numerical_columns].isnull().sum())
-else:
-    print("Numerical columns have no NaN values.")
+if final_row_count == 0:
+    raise ValueError("No valid data available after preprocessing. Exiting.")
+elif final_row_count < initial_row_count:
+    print(f"Warning: {initial_row_count - final_row_count} rows were dropped due to missing or invalid values.")
 
-# Drop rows with invalid numerical data (NaN values in numerical columns)
-data = data.dropna(subset=numerical_columns)
-
-# Check if the dataset is empty after dropping NaN rows
+# Validate and standardize the 'split' column
+data['split'] = data['split'].str.capitalize()
+valid_splits = {'Training', 'Testing', 'Validation'}
+data = data[data['split'].isin(valid_splits)]
 if data.empty:
-    print("No valid data available after preprocessing. Exiting.")
-    exit()
+    raise ValueError("No data available after filtering for valid 'split' values (Training, Testing, Validation).")
 
-# Apply MinMaxScaler
-data[numerical_columns] = scaler.fit_transform(data[numerical_columns])
+# Split data based on the 'split' column
+train_data = data[data['split'] == 'Training']
+val_data = data[data['split'] == 'Validation']
+test_data = data[data['split'] == 'Testing']
 
-# Check if the dataset is empty after scaling
-if data.empty:
-    print("Dataset is empty after scaling. Exiting.")
-    exit()
+# Print split sizes for debugging
+print(f"\nDataset splits:")
+print(f"Training samples: {len(train_data)}")
+print(f"Validation samples: {len(val_data)}")
+print(f"Testing samples: {len(test_data)}")
 
-# Split the data into train, test, and validation sets
-train_data, temp_data = train_test_split(
-    data, test_size=0.3, stratify=data['is_malicious'], random_state=42
-)
-val_data, test_data = train_test_split(
-    temp_data, test_size=0.5, stratify=temp_data['is_malicious'], random_state=42
-)
-
-# Populate the 'split' column
-train_data['split'] = 'training'
-val_data['split'] = 'validation'
-test_data['split'] = 'test'
-
-# Concatenate the split datasets back together for potential use
-processed_data = pd.concat([train_data, val_data, test_data])
+# Ensure the splits are not empty
+if train_data.empty or test_data.empty:
+    raise ValueError("Training or testing split is empty. Check the 'split' column in the dataset.")
 
 # Define feature columns and target
-features = ['length', 'num_subdomains', 'has_ip_address', 'has_special_char']
+features = ['length', 'num_subdomains', 'has_ip_address']
 target = 'is_malicious'
 
 X_train = train_data[features]
 y_train = train_data[target]
-X_val = val_data[features]
-y_val = val_data[target]
 X_test = test_data[features]
 y_test = test_data[target]
 
-# Standardize features for logistic regression
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_val_scaled = scaler.transform(X_val)
-X_test_scaled = scaler.transform(X_test)
+# Initialize validation sets
+X_val = pd.DataFrame()
+y_val = pd.Series(dtype=float)
+
+if not val_data.empty:
+    X_val = val_data[features]
+    y_val = val_data[target]
 
 # Train logistic regression model
 log_reg = LogisticRegression(random_state=42, max_iter=1000)
-log_reg.fit(X_train_scaled, y_train)
+log_reg.fit(X_train, y_train)
 
-# Evaluate model on validation set
-val_predictions = log_reg.predict(X_val_scaled)
-print("Validation Performance:")
-print(classification_report(y_val, val_predictions))
+# Evaluate model on validation set if available
+if not val_data.empty:
+    val_predictions = log_reg.predict(X_val)
+    print("\nValidation Performance:")
+    print(classification_report(y_val, val_predictions))
+    val_accuracy = accuracy_score(y_val, val_predictions)
+    print(f"Validation Accuracy: {val_accuracy:.4f}")
 
 # Evaluate model on test set
-test_predictions = log_reg.predict(X_test_scaled)
-print("Test Performance:")
+test_predictions = log_reg.predict(X_test)
+print("\nTest Performance:")
 print(classification_report(y_test, test_predictions))
-
-# Accuracy score for comparison
-val_accuracy = accuracy_score(y_val, val_predictions)
 test_accuracy = accuracy_score(y_test, test_predictions)
-print(f"Validation Accuracy: {val_accuracy:.4f}")
 print(f"Test Accuracy: {test_accuracy:.4f}")
 
-# Save the processed dataset with the 'split' column
-processed_data.to_csv('Processed_URL_DatasetV2.csv', index=False)
-print("Processed dataset saved as 'Processed_URL_Dataset.csv'.")
+print("\nProcessed dataset saved as 'Processed_URL_DatasetV2.csv'.")
