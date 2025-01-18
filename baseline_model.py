@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 # Load the dataset
 data = pd.read_csv('Preprocessed_URL_Dataset.csv')
@@ -102,5 +102,14 @@ print("\nTest Performance:")
 print(classification_report(y_test, test_predictions))
 test_accuracy = accuracy_score(y_test, test_predictions)
 print(f"Test Accuracy: {test_accuracy:.4f}")
+
+# Calculate baseline metrics
+baseline_precision = precision_score(y_test, test_predictions)
+baseline_recall = recall_score(y_test, test_predictions)
+baseline_f1 = f1_score(y_test, test_predictions)
+
+# Expose the baseline metrics
+def get_baseline_metrics():
+    return baseline_precision, baseline_recall, baseline_f1
 
 print("\nProcessed dataset saved as 'Processed_URL_DatasetV2.csv'.")
