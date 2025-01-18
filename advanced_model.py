@@ -22,10 +22,14 @@ data['is_malicious'] = data['is_malicious'].apply(convert_to_binary)
 
 # Initialize the XGBoost classifier
 model = XGBClassifier(
-    n_estimators=100,  # Number of boosted trees to fit
-    learning_rate=0.1,  # Step size shrinkage
-    max_depth=3,  # Maximum tree depth for base learners
-    random_state=42  # Random seed for reproducibility
+    n_estimators=100,
+    learning_rate=0.1,
+    max_depth=6,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    random_state=42,
+    use_label_encoder=False,   # Avoids a deprecation warning
+    eval_metric="logloss"      # Recommended default
 )
 
 # Prepare the dataset for cross-validation
