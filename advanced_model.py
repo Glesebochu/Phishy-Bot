@@ -42,8 +42,14 @@ for train_index, test_index in skf.split(X, y):
     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
     y_train, y_test = y.iloc[train_index], y.iloc[test_index]
     
-    # Train the model
-    model.fit(X_train, y_train)
+    # Train the model with early stopping
+    model.fit(
+        X_train, y_train,
+        eval_set=[(X_test, y_test)],
+        eval_metric="logloss",
+        early_stopping_rounds=10,
+        verbose=True
+    )
     
     # Predict on the test set
     y_pred = model.predict(X_test)
