@@ -1,7 +1,7 @@
 from baseline_model import convert_to_binary, get_baseline_metrics
 import xgboost as xgb
 from xgboost import XGBClassifier
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import precision_score, recall_score, f1_score
 import pandas as pd
 
@@ -20,6 +20,10 @@ if missing_columns:
 # Convert is_malicious to numeric
 data['is_malicious'] = data['is_malicious'].apply(convert_to_binary)
 
+# Drop columns with invalid data types for XGBoost
+invalid_columns = ['split', 'url', 'domain', 'path']
+data = data.drop(columns=invalid_columns, errors='ignore')
+
 # Initialize the XGBoost classifier
 model = XGBClassifier(
     n_estimators=100,
@@ -28,8 +32,7 @@ model = XGBClassifier(
     subsample=0.8,
     colsample_bytree=0.8,
     random_state=42,
-    use_label_encoder=False,   # Avoids a deprecation warning
-    eval_metric="logloss"      # Recommended default
+    use_label_encoder=False   # Avoids a deprecation warning
 )
 
 # Prepare the dataset for cross-validation
@@ -50,7 +53,6 @@ for train_index, test_index in skf.split(X, y):
     model.fit(
         X_train, y_train,
         eval_set=[(X_test, y_test)],
-        eval_metric="logloss",
         early_stopping_rounds=10,
         verbose=True
     )
