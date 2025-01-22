@@ -1,51 +1,97 @@
 import re
 import joblib
 import pandas as pd
+from urllib.parse import urlparse
 
 # Load your trained model
 model = joblib.load("advanced_xgb_model.pkl")
 
+# ------------------------------------------------------
+# 1) List of TLDs from your training data:
+TRAINING_TLDS = [
+    "com", "org", "theshoppe.com", "it", "blogspot.com",
+    # etc. Add the entire list your model expects
+]
+
 def extract_features_from_url(url: str) -> pd.DataFrame:
     """
-    Extract the necessary numeric/categorical features from the URL.
-    Return a 1-row DataFrame (or the same structure your model expects).
+    Extract the exact numeric/binary features your model was trained on.
+    Return a 1-row DataFrame with columns matching the training phase.
     """
-    # Example features:
-    has_ip = 1 if re.match(r"^(\d{1,3}\.){3}\d{1,3}", url) else 0
-    num_subdomains = url.count('.') - 1 if has_ip == 0 else 0
-    length = len(url)
+    # 1. Parse the URL to get domain, TLD, etc.
+    parsed = urlparse(url)
+    domain = parsed.netloc.lower()  # e.g., "81.17.25.149" or "example.com"
+    path_query_fragment = parsed.path + parsed.query + parsed.fragment
     
-    # Additional features
-    has_https = 1 if url.startswith("https://") else 0
-    num_digits = sum(c.isdigit() for c in url)
-    num_special_chars = sum(not c.isalnum() for c in url)
-    path_length = len(re.findall(r"/", url))
-    query_length = len(re.findall(r"\?", url))
-    fragment_length = len(re.findall(r"#", url))
-    tld_length = len(url.split('.')[-1])
+    # 2. has_ip_address (binary)
+    ip_match = re.match(r"^(\d{1,3}\.){3}\d{1,3}$", domain)
+    has_ip_address = 1 if ip_match else 0
     
-
-    data = {
-        'length': [length],
-        'num_subdomains': [num_subdomains],
-        'has_ip_address': [has_ip],
-        'has_https': [has_https],
-        'num_digits': [num_digits],
-        'num_special_chars': [num_special_chars],
-        'path_length': [path_length],
-        'query_length': [query_length],
-        'fragment_length': [fragment_length],
-        'tld_length': [tld_length]
+    # 3. length (full URL length)
+    url_length = len(url)
+    
+    # 4. num_subdomains (count '.' minus 1 if not IP) 
+    #    But watch out for something like 'co.uk' -> subdomain logic can vary
+    #    Example approach:
+    if not has_ip_address:
+        num_subdomains = domain.count('.') - 1 if domain.count('.') > 1 else 0
+    else:
+        num_subdomains = 0
+    
+    # 5. has_special_char (binary): if URL contains any non-alphanumeric or non-'.' or '-'
+    #    This is just an example rule. Adapt to your training logic.
+    if re.search(r"[^a-zA-Z0-9\.\-/:_]", url):
+        has_special_char = 1
+    else:
+        has_special_char = 0
+    
+    # 6. Extract the TLD from domain (the part after the last '.')
+    #    e.g., domain = "example.com" -> tld = "com"
+    #          domain = "sub.theshoppe.com" -> tld = "theshoppe.com"
+    parts = domain.split('.')
+    # A naive approach: try the last two parts for known multi-part TLDs
+    tld = None
+    
+    # Check from longest to shortest
+    for i in range(len(parts)):
+        candidate = ".".join(parts[i:])
+        if candidate in TRAINING_TLDS:
+            tld = candidate
+            break
+    
+    if tld is None:
+        # If we can't match, fallback to the single last part
+        tld = parts[-1]  # might not match the training TLD list though
+    
+    # 7. Build a feature dictionary. Start with the core numeric ones:
+    feature_dict = {
+        "has_ip_address": [has_ip_address],
+        "length": [url_length],
+        "num_subdomains": [num_subdomains],
+        "has_special_char": [has_special_char],
     }
-
-    df = pd.DataFrame(data)
+    
+    # 8. For each TLD in TRAINING_TLDS, add a binary column tldX
+    #    1 if it matches the current URL's TLD, else 0
+    for training_tld in TRAINING_TLDS:
+        col_name = f"tld{training_tld}"
+        if tld == training_tld:
+            feature_dict[col_name] = [1]
+        else:
+            feature_dict[col_name] = [0]
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(feature_dict)
     return df
+
 
 def predict_url(url: str) -> str:
     """
-    Given a URL, return "Malicious" or "Legitimate" (or similar labels).
+    Given a URL, produce a prediction using the model that
+    expects features like [has_ip_address, length, num_subdomains, 
+    has_special_char, tldorg, tldcom, ...].
     """
-    # 1. Extract features
+    # 1. Extract features with the matching schema
     features_df = extract_features_from_url(url)
 
     # 2. Predict
