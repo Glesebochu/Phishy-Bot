@@ -105,8 +105,8 @@ def run_advanced_model():
     model.fit(X, y)
     
     # Save the final model
-    joblib.dump(model, "final_xgb_model.pkl")
-    print("Final model retrained on the entire dataset and saved as 'final_xgb_model.pkl'.")
+    joblib.dump(model, "advanced_xgb_model.pkl")
+    print("Final model retrained on the entire dataset and saved as 'advanced_xgb_model.pkl'.")
 
 def main():
     run_advanced_model()
