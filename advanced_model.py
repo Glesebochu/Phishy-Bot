@@ -4,13 +4,22 @@ from xgboost import XGBClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import precision_score, recall_score, f1_score
 import pandas as pd
+import joblib
 
 def run_advanced_model():
     # Load the dataset
     data = pd.read_csv('Preprocessed_URL_Dataset.csv')
     
     # Normalize column names
-    data.columns = data.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('[', '').str.replace(']', '').str.replace('<', '').str.replace('>', '')
+    data.columns = (
+        data.columns.str.strip()
+        .str.lower()
+        .str.replace(' ', '_')
+        .str.replace('[', '')
+        .str.replace(']', '')
+        .str.replace('<', '')
+        .str.replace('>', '')
+    )
     
     # Verify required columns
     required_columns = ['length', 'num_subdomains', 'has_ip_address', 'is_malicious']
@@ -27,11 +36,11 @@ def run_advanced_model():
     
     # Initialize the XGBoost classifier
     model = XGBClassifier(
-        n_estimators=200,          # Increased number of trees
-        learning_rate=0.05,        # Lower learning rate for better accuracy
-        max_depth=4,               # Reduced depth to prevent overfitting
-        subsample=0.9,             # Higher subsample to use more data
-        colsample_bytree=0.7,      # Lower colsample to prevent overfitting
+        n_estimators=200,
+        learning_rate=0.05,
+        max_depth=4,
+        subsample=0.9,
+        colsample_bytree=0.7,
         random_state=42,
     )
     
@@ -49,11 +58,10 @@ def run_advanced_model():
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
-        # Train the model with early stopping
+        # Train the model
         model.fit(
             X_train, y_train,
             eval_set=[(X_test, y_test)],
-            # early_stopping_rounds=10,
             verbose=False
         )
         
@@ -70,23 +78,35 @@ def run_advanced_model():
         recall_scores.append(recall)
         f1_scores.append(f1)
         
-        print(f"Fold results - Precision: {precision}, Recall: {recall}, F1 Score: {f1} \n\n")
+        print(f"Fold results - Precision: {precision}, Recall: {recall}, F1 Score: {f1}\n")
     
     # Calculate average metrics
     avg_precision = sum(precision_scores) / len(precision_scores)
     avg_recall = sum(recall_scores) / len(recall_scores)
     avg_f1 = sum(f1_scores) / len(f1_scores)
     
-    print(f"Average Precision: {avg_precision}, \nAverage Recall: {avg_recall}, \nAverage F1 Score: {avg_f1} \n\n")
+    print(f"Average Precision: {avg_precision}")
+    print(f"Average Recall: {avg_recall}")
+    print(f"Average F1 Score: {avg_f1}\n")
     
     # Get baseline metrics
     baseline_precision, baseline_recall, baseline_f1 = get_baseline_metrics()
     
-    # Compare these metrics to your baseline to see if XGBoost outperforms it in raw form
-    print(f"Baseline Precision: {baseline_precision}, \nBaseline Recall: {baseline_recall}, \nBaseline F1 Score: {baseline_f1}")
-    print(f"\n\nXGBoost Precision Improvement: {avg_precision - baseline_precision}")
+    # Compare these metrics to your baseline
+    print(f"Baseline Precision: {baseline_precision}")
+    print(f"Baseline Recall: {baseline_recall}")
+    print(f"Baseline F1 Score: {baseline_f1}\n")
+    
+    print(f"XGBoost Precision Improvement: {avg_precision - baseline_precision}")
     print(f"XGBoost Recall Improvement: {avg_recall - baseline_recall}")
     print(f"XGBoost F1 Score Improvement: {avg_f1 - baseline_f1}")
+    
+    # Now retrain the final model on ALL data (optional but recommended)
+    model.fit(X, y)
+    
+    # Save the final model
+    joblib.dump(model, "final_xgb_model.pkl")
+    print("Final model retrained on the entire dataset and saved as 'final_xgb_model.pkl'.")
 
 def main():
     run_advanced_model()
