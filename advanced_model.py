@@ -33,7 +33,6 @@ def run_advanced_model():
         subsample=0.9,             # Higher subsample to use more data
         colsample_bytree=0.7,      # Lower colsample to prevent overfitting
         random_state=42,
-        use_label_encoder=False    # Avoids a deprecation warning
     )
     
     # Prepare the dataset for cross-validation
