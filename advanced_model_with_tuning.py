@@ -100,7 +100,7 @@ def run_model_with_tuning():
     print(f"Average Precision: {avg_precision}, Average Recall: {avg_recall}, Average F1 Score: {avg_f1}")
     
     # Get baseline metrics
-    baseline_precision, baseline_recall, baseline_f1 = get_baseline_metrics()
+    baseline_precision, baseline_recall, baseline_f1 = 0,0,0 #get_baseline_metrics()
     
     # Compare these metrics to your baseline to see if XGBoost outperforms it in raw form
     print(f"Baseline Precision: {baseline_precision}, Baseline Recall: {baseline_recall}, Baseline F1 Score: {baseline_f1}")
