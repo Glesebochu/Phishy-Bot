@@ -6,11 +6,19 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 import pandas as pd
 
 def run_model_with_tuning():
+    # Print library versions for debugging
+    print(f"xgboost version: {xgb.__version__}")
+    print(f"scikit-learn version: {GridSearchCV.__module__.split('.')[0]} {GridSearchCV.__module__.split('.')[1]}")
+    
     # Load the dataset
     data = pd.read_csv('Preprocessed_URL_Dataset.csv')
     
     # Normalize column names
     data.columns = data.columns.str.strip().str.lower().str.replace(' ', '_')
+    
+    # Drop columns with invalid data types for XGBoost
+    invalid_columns = ['split', 'url', 'domain', 'path']
+    data = data.drop(columns=invalid_columns, errors='ignore')
     
     # Verify required columns
     required_columns = ['length', 'num_subdomains', 'has_ip_address', 'is_malicious']
@@ -37,8 +45,12 @@ def run_model_with_tuning():
     # Initialize the XGBoost classifier
     model = XGBClassifier(random_state=42)
     
+    # print(X.dtypes)  # Ensure all columns are numeric or categorical
+    
     # Initialize GridSearchCV
-    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42), scoring='f1', verbose=1, n_jobs=-1)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    print(f"CV type: {type(cv)}")
+    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv, scoring='f1', verbose=1, n_jobs=-1)
     
     # Fit GridSearchCV
     grid_search.fit(X, y)
@@ -61,8 +73,8 @@ def run_model_with_tuning():
             X_train, y_train,
             eval_set=[(X_test, y_test)],
             eval_metric="logloss",
-            early_stopping_rounds=10,
-            verbose=True
+            # early_stopping_rounds=10,
+            verbose=False
         )
         
         # Predict on the test set
