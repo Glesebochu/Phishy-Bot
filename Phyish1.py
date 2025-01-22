@@ -1,5 +1,6 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from advanced_classifier import predict_url
 
 # Replace 'YOUR_TOKEN' with the bot token from BotFather
 TOKEN = '7921896292:AAEzw9EB27bmR0tU2VPc-ozJWpQ2g6X1Jbw'
@@ -19,8 +20,10 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     url = context.args[0]
-    # TODO: Implement your URL checking logic here
-    await update.message.reply_text(f"Checking the URL: {url}\nFeature coming soon!")
+    # Use the advanced_model to analyze the URL
+    result = predict_url(url)
+    # Communicate the analysis result using the bot
+    await update.message.reply_text(f"Analysis result for {url}:\n{result}")
 
 def main():
     # Create Application
