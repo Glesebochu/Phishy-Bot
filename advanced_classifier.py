@@ -142,11 +142,12 @@ def extract_features_from_url(url: str) -> pd.DataFrame:
     return df
 
 
-def predict_url(url: str) -> str:
+def predict_url(url: str, threshold: float = 0.5) -> str:
     """
     Given a URL, produce a prediction using the model that
     expects features like [has_ip_address, length, num_subdomains, 
     has_special_char, tldorg, tldcom, ...].
+    The threshold parameter allows adjusting the sensitivity of the classification.
     """
     # 1. Extract features with the matching schema
     features_df = extract_features_from_url(url)
@@ -156,7 +157,7 @@ def predict_url(url: str) -> str:
 
     # 3. Convert numeric prediction to a string label with probability
     prob_malicious = prediction_proba[1]
-    if prob_malicious >= 0.5:
+    if prob_malicious >= threshold:
         return f"Malicious ({prob_malicious:.2f})"
     else:
         return f"Legitimate ({prob_malicious:.2f})"
@@ -171,8 +172,9 @@ def main():
         "http://example.com/path?query=1"
     ]
     
+    threshold = 0.5  # Adjust the threshold as needed
     for url in test_urls:
-        result = predict_url(url)
+        result = predict_url(url, threshold)
         print(f"URL: {url} -> Prediction: {result}")
 
 if __name__ == "__main__":
