@@ -15,14 +15,14 @@ def run_advanced_model():
         data.columns.str.strip()
         .str.lower()
         .str.replace(' ', '_')
-        .str.replace('[', '')
-        .str.replace(']', '')
-        .str.replace('<', '')
-        .str.replace('>', '')
+        .str.replace('[', '_')
+        .str.replace(']', '_')
+        .str.replace('<', '_')
+        .str.replace('>', '_')
     )
     
     # Verify required columns
-    required_columns = ['length', 'num_subdomains', 'has_ip_address', 'is_malicious']
+    required_columns = ['length', 'num_subdomains', 'has_ip_address', 'has_special_char', 'is_malicious']
     missing_columns = [col for col in required_columns if col not in data.columns]
     if missing_columns:
         raise ValueError(f"The following required columns are missing from the dataset: {missing_columns}")
