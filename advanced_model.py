@@ -5,6 +5,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import precision_score, recall_score, f1_score
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
 
 def run_advanced_model():
     # Load the dataset
@@ -123,6 +124,10 @@ def run_advanced_model():
     # Save the final model
     joblib.dump(model, "advanced_xgb_model.pkl")
     print("Final model retrained on the entire dataset and saved as 'advanced_xgb_model.pkl'.")
+    
+    # Plot feature importance
+    xgb.plot_importance(model)
+    plt.show()
 
 def main():
     run_advanced_model()
