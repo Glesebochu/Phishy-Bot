@@ -151,14 +151,16 @@ def predict_url(url: str) -> str:
     # 1. Extract features with the matching schema
     features_df = extract_features_from_url(url)
 
-    # 2. Predict
-    prediction = model.predict(features_df)[0]  # 0 or 1
+    # 2. Predict probability
+    prediction_proba = model.predict_proba(features_df)[0]  # [prob_legitimate, prob_malicious]
 
-    # 3. Convert numeric prediction to a string label
-    if prediction == 1:
-        return "Malicious"
+    # 3. Convert numeric prediction to a string label with probability
+    prob_malicious = prediction_proba[1]
+    if prob_malicious >= 0.5:
+        return f"Malicious ({prob_malicious:.2f})"
     else:
-        return "Legitimate"
+        return f"Legitimate ({prob_malicious:.2f})"
+
 
 def main():
     test_urls = [
