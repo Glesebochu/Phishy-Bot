@@ -142,6 +142,9 @@ def predict_url(url):
     print("Prediction: Malicious" if predictions[0] == 1 else "Prediction: Non-Malicious")
     print(f"Prediction Probabilities: {predicted_probabilities[0]}")
 
+    # Return the prediction result
+    return "Malicious" if predictions[0] == 1 else "Non-malicious"
+
 # Main prediction logic
 def main():
     choice = get_user_choice()
