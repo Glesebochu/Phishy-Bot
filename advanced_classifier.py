@@ -9,7 +9,8 @@ model = joblib.load("advanced_xgb_model.pkl")
 # ------------------------------------------------------
 # 1) List of TLDs from your training data:
 TRAINING_TLDS = [
-    "com", "org", "theshoppe.com", "it", "blogspot.com",
+    "com", "org", "com.br", "it", "us", "net", "co.uk", "de", "ru", "info", "top", "nl", "ca", "gov", 
+     "ac.uk", "co.uk", "wordpress.com", 
     # etc. Add the entire list your model expects
 ]
 
