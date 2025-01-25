@@ -30,6 +30,22 @@ def run_advanced_model():
     # Convert is_malicious to numeric
     data['is_malicious'] = data['is_malicious'].apply(convert_to_binary)
     
+    # Check the distribution of the target variable
+    print("Distribution of target variable (is_malicious):")
+    print(data['is_malicious'].value_counts())
+    
+    # Handle NaN values in 'url' column
+    data['url'] = data['url'].fillna('')
+    
+    # Check .com domain distribution
+    data['is_com_domain'] = data['url'].str.contains('.com').astype(int)
+    com_domain_counts = data.groupby(['is_com_domain', 'is_malicious']).size().unstack(fill_value=0)
+    
+    print("Distribution of .com domains (0: non-.com, 1: .com) and maliciousness (0: non-malicious, 1: malicious):")
+    com_domain_counts.columns = ['Non-malicious', 'Malicious']
+    com_domain_counts.index = ['Non-.com', '.com']
+    print(com_domain_counts)
+    
     # Drop columns with invalid data types for XGBoost
     invalid_columns = ['split', 'url', 'domain', 'path']
     data = data.drop(columns=invalid_columns, errors='ignore')
