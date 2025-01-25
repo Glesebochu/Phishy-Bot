@@ -117,38 +117,46 @@ def get_random_rows():
 
     return pd.DataFrame([malicious_row, non_malicious_row])
 
+def predict_url(url):
+    additional_features = extract_additional_features(url)
+    input_data = additional_features.to_dict()
+    input_data['url'] = url
+
+    # Ensure input_data matches the features the scaler and model expect
+    expected_features = scaler.feature_names_in_
+    for feature in expected_features:
+        if feature not in input_data:
+            input_data[feature] = 0  # Add missing features with default values
+    input_data = pd.DataFrame([input_data])[expected_features]  # Keep only expected features
+
+    # Scale the data
+    input_data_scaled = scaler.transform(input_data)
+
+    # Make predictions
+    predictions = model.predict(input_data_scaled)
+    predicted_probabilities = model.predict_proba(input_data_scaled)
+
+    # Output the results
+    print("\nData Row:")
+    print(input_data.iloc[0].to_dict())
+    print("Prediction: Malicious" if predictions[0] == 1 else "Prediction: Non-Malicious")
+    print(f"Prediction Probabilities: {predicted_probabilities[0]}")
+
 # Main prediction logic
 def main():
     choice = get_user_choice()
 
     if choice == '1':
         new_data = get_manual_input()
+        for url in new_data['url']:
+            predict_url(url)
     elif choice == '2':
         new_data = get_random_rows()
+        for url in new_data['url']:
+            predict_url(url)
     else:
         print("Invalid choice. Exiting.")
         return
-
-    # Ensure new_data matches the features the scaler and model expect
-    expected_features = scaler.feature_names_in_
-    for feature in expected_features:
-        if feature not in new_data.columns:
-            new_data[feature] = 0  # Add missing features with default values
-    new_data = new_data[expected_features]  # Keep only expected features
-
-    # Scale the data
-    new_data_scaled = scaler.transform(new_data)
-
-    # Make predictions
-    predictions = model.predict(new_data_scaled)
-    predicted_probabilities = model.predict_proba(new_data_scaled)
-
-    # Output the results
-    for i, row in new_data.iterrows():
-        print("\nData Row:")
-        print(row.to_dict())
-        print("Prediction: Malicious" if predictions[i] == 1 else "Prediction: Non-Malicious")
-        print(f"Prediction Probabilities: {predicted_probabilities[i]}")
 
 if __name__ == "__main__":
     main()
