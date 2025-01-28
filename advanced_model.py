@@ -1,4 +1,5 @@
 from baseline_model import convert_to_binary, get_baseline_metrics
+from baseline_modelV2 import extract_additional_features
 import xgboost as xgb
 from xgboost import XGBClassifier
 from sklearn.model_selection import StratifiedKFold
@@ -22,6 +23,11 @@ def run_advanced_model():
         .str.replace('>', '_')
     )
     
+    # Extract additional features from URL
+    print("Extracting additional features...")
+    url_features = data['url'].apply(extract_additional_features)
+    data = pd.concat([data, url_features], axis=1)
+    
     # Verify required columns
     required_columns = ['length', 'num_subdomains', 'has_ip_address', 'has_special_char', 'is_malicious']
     missing_columns = [col for col in required_columns if col not in data.columns]
@@ -31,25 +37,25 @@ def run_advanced_model():
     # Convert is_malicious to numeric
     data['is_malicious'] = data['is_malicious'].apply(convert_to_binary)
     
-    # Check the distribution of the target variable
-    print("Distribution of target variable (is_malicious):")
-    print(data['is_malicious'].value_counts())
+    # Handle missing values
+    data = data.fillna(0)
     
-    # Handle NaN values in 'url' column
-    data['url'] = data['url'].fillna('')
-    
-    # Check .com domain distribution
-    data['is_com_domain'] = data['url'].str.contains('.com').astype(int)
-    com_domain_counts = data.groupby(['is_com_domain', 'is_malicious']).size().unstack(fill_value=0)
-    
-    print("Distribution of .com domains (0: non-.com, 1: .com) and maliciousness (0: non-malicious, 1: malicious):")
-    com_domain_counts.columns = ['Non-malicious', 'Malicious']
-    com_domain_counts.index = ['Non-.com', '.com']
-    print(com_domain_counts)
+    # Define features
+    features = [
+        'length', 'num_subdomains', 'has_ip_address', 'has_special_char',
+        'special_chars_ratio', 'digits_ratio',
+        'path_length', 'query_length', 'fragment_length',
+        'dots_count', 'hyphens_count', 'has_suspicious_words',
+        'has_hexadecimal', 'has_data_uri'
+    ]
     
     # Drop columns with invalid data types for XGBoost
     invalid_columns = ['split', 'url', 'domain', 'path']
     data = data.drop(columns=invalid_columns, errors='ignore')
+    
+    # Drop TLD columns
+    tld_columns = [col for col in data.columns if col.startswith('tld_')]
+    data = data.drop(columns=tld_columns, errors='ignore')
     
     # Initialize the XGBoost classifier
     model = XGBClassifier(
@@ -62,7 +68,7 @@ def run_advanced_model():
     )
     
     # Prepare the dataset for cross-validation
-    X = data.drop('is_malicious', axis=1)
+    X = data[features]
     y = data['is_malicious']
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
@@ -75,10 +81,11 @@ def run_advanced_model():
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
-        # Train the model
+        # Train the model with early stopping
         model.fit(
             X_train, y_train,
             eval_set=[(X_test, y_test)],
+            # early_stopping_rounds=10,
             verbose=False
         )
         
