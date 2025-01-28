@@ -8,65 +8,9 @@ model = joblib.load("advanced_xgb_model.pkl")
 
 # ------------------------------------------------------
 # 1) List of TLDs from your training data:
-TRAINING_TLDS = [
-    "org",
-    "com",
-    "theshoppe.com",
-    "it",
-    "blogspot.com",
-    "dcs.st-and.ac.uk",
-    "03.ibm.com",
-    "allthelyrics.com",
-    "allvoices.com",
-    "allwwewrestlers.com",
-    "allyoucanread.com",
-    "alpsroads.net",
-    "alternatehistory.com",
-    "alternet.org",
-    "alterthepress.com",
-    "altfg.com",
-    "altiusdirectory.com",
-    "altoonamirror.com",
-    "altosport.com",
-    "altpress.com",
-    "alumni.net",
-    "alumniclass.com",
-    "alwaysontherun.net",
-    "amazon.ca",
-    "amazon.co.uk",
-    "amazon.com",
-    "mylife.com",
-    "mylifeofcrime.wordpress.com",
-    "mylifetime.com",
-    "mylocalservices.us",
-    "mylovedpornstars.com",
-    "mymovies.net",
-    "mynewplace.com",
-    "mynhldraft.com",
-    "mynhltraderumors.com",
-    "ottawasun.com",
-    "ougrizzlies.com",
-    "ourairports.com",
-    "ourbis.ca",
-    "ourfaves.com",
-    "ourhistory.canadiens.com",
-    "youtube.com",
-    "177.22.179",
-    "nl",
-    "000webhostapp.com",
-    "171.169.193:35516",
-    "net",
-    "de",
-    "248.170.218",
-    "top",
-    "ru",
-    "info",
-    "com.br",
-    "200.14.110"
-]
 # TRAINING_TLDS = [
 #     "com", "org", "com.br", "it", "us", "net", "co.uk", "de", "ru", "info", "top", "nl", "ca", "gov", 
-#      "ac.uk", "co.uk", "wordpress.com", 
+#      "ac.uk", "edu"
 #     # etc. Add the entire list your model expects
 # ]
 
@@ -88,54 +32,46 @@ def extract_features_from_url(url: str) -> pd.DataFrame:
     url_length = len(url)
     
     # 4. num_subdomains (count '.' minus 1 if not IP) 
-    #    But watch out for something like 'co.uk' -> subdomain logic can vary
-    #    Example approach:
     if not has_ip_address:
         num_subdomains = domain.count('.') - 1 if domain.count('.') > 1 else 0
     else:
         num_subdomains = 0
     
     # 5. has_special_char (binary): if URL contains any non-alphanumeric or non-'.' or '-'
-    #    This is just an example rule. Adapt to your training logic.
     if re.search(r"[^a-zA-Z0-9\.\-/:_]", url):
         has_special_char = 1
     else:
         has_special_char = 0
     
-    # 6. Extract the TLD from domain (the part after the last '.')
-    #    e.g., domain = "example.com" -> tld = "com"
-    #          domain = "sub.theshoppe.com" -> tld = "theshoppe.com"
-    parts = domain.split('.')
-    # A naive approach: try the last two parts for known multi-part TLDs
-    tld = None
-    
-    # Check from longest to shortest
-    for i in range(len(parts)):
-        candidate = ".".join(parts[i:])
-        if candidate in TRAINING_TLDS:
-            tld = candidate
-            break
-    
-    if tld is None:
-        # If we can't match, fallback to the single last part
-        tld = parts[-1]  # might not match the training TLD list though
-    
-    # 7. Build a feature dictionary. Start with the core numeric ones:
+    # Additional features
+    special_chars_ratio = sum(1 for c in url if not c.isalnum() and c not in '.-') / len(url)
+    digits_ratio = sum(1 for c in url if c.isdigit()) / len(url)
+    path_length = len(parsed.path)
+    query_length = len(parsed.query)
+    fragment_length = len(parsed.fragment)
+    dots_count = url.count('.')
+    hyphens_count = url.count('-')
+    has_suspicious_words = int(any(word in url for word in ['login', 'secure', 'account', 'update', 'free', 'lucky', 'bonus']))
+    has_hexadecimal = int(bool(re.search(r'%[0-9a-fA-F]{2}', url)))
+    has_data_uri = int(url.startswith('data:'))
+
+    # Build a feature dictionary
     feature_dict = {
-        "has_ip_address": [has_ip_address],
         "length": [url_length],
         "num_subdomains": [num_subdomains],
+        "has_ip_address": [has_ip_address],
         "has_special_char": [has_special_char],
+        "special_chars_ratio": [special_chars_ratio],
+        "digits_ratio": [digits_ratio],
+        "path_length": [path_length],
+        "query_length": [query_length],
+        "fragment_length": [fragment_length],
+        "dots_count": [dots_count],
+        "hyphens_count": [hyphens_count],
+        "has_suspicious_words": [has_suspicious_words],
+        "has_hexadecimal": [has_hexadecimal],
+        "has_data_uri": [has_data_uri],
     }
-    
-    # 8. For each TLD in TRAINING_TLDS, add a binary column tldX
-    #    1 if it matches the current URL's TLD, else 0
-    for training_tld in TRAINING_TLDS:
-        col_name = f"tld_{training_tld}_"
-        if tld == training_tld:
-            feature_dict[col_name] = [1]
-        else:
-            feature_dict[col_name] = [0]
     
     # Convert to DataFrame
     df = pd.DataFrame(feature_dict)
@@ -165,11 +101,11 @@ def predict_url(url: str, threshold: float = 0.5) -> str:
 
 def main():
     test_urls = [
-        "http://www.google.com",
-        "http://malicious-site.com",
-        "http://192.168.0.1",
-        "http://subdomain.example.com",
-        "http://example.com/path?query=1"
+        "www.google.com",
+        "http://moneylionvfe.top/login",
+        "192.168.0.1",
+        "subdomain.example.com",
+        "example.com/path?query=1"
     ]
     
     threshold = 0.5  # Adjust the threshold as needed
