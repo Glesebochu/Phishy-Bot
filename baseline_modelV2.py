@@ -2,10 +2,11 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score, roc_auc_score
+from sklearn.metrics import classification_report, accuracy_score, roc_auc_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import RandomizedSearchCV
 from urllib.parse import urlparse
 import re
+import joblib
 
 def extract_additional_features(url):
     try:
@@ -186,3 +187,26 @@ import joblib
 joblib.dump(best_rf, 'best_rf_model.joblib')
 joblib.dump(scaler, 'feature_scaler.joblib')
 print("\nModel and scaler saved as 'best_rf_model.joblib' and 'feature_scaler.joblib'")
+
+def get_baseline_metrics():
+    """
+    Returns the recall, precision, and f1 score of the baseline model.
+    """
+    # Load the model and scaler
+    best_rf = joblib.load('best_rf_model.joblib')
+    scaler = joblib.load('feature_scaler.joblib')
+    
+    # Prepare features and target for the test set
+    X_test = test_data[features]
+    y_test = test_data['is_malicious']
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Make predictions
+    test_pred = best_rf.predict(X_test_scaled)
+    
+    # Calculate metrics
+    precision = precision_score(y_test, test_pred)
+    recall = recall_score(y_test, test_pred)
+    f1 = f1_score(y_test, test_pred)
+    
+    return precision, recall, f1
