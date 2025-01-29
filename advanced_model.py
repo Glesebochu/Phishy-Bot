@@ -1,5 +1,5 @@
-from baseline_model import convert_to_binary, get_baseline_metrics
-from baseline_modelV2 import extract_additional_features
+from baseline_model import convert_to_binary
+from baseline_modelV2 import extract_additional_features, get_baseline_metrics
 import xgboost as xgb
 from xgboost import XGBClassifier
 from sklearn.model_selection import StratifiedKFold
