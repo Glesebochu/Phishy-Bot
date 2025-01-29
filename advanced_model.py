@@ -46,7 +46,8 @@ def run_advanced_model():
         'special_chars_ratio', 'digits_ratio',
         'path_length', 'query_length', 'fragment_length',
         'dots_count', 'hyphens_count', 'has_suspicious_words',
-        'has_hexadecimal', 'has_data_uri'
+        'has_hexadecimal', 'has_data_uri',
+        'tld_org_', 'tld_com_', 'tld_net_', 'other_tlds'
     ]
     
     # Drop columns with invalid data types for XGBoost
@@ -54,8 +55,8 @@ def run_advanced_model():
     data = data.drop(columns=invalid_columns, errors='ignore')
     
     # Drop TLD columns
-    tld_columns = [col for col in data.columns if col.startswith('tld_')]
-    data = data.drop(columns=tld_columns, errors='ignore')
+    # tld_columns = [col for col in data.columns if col.startswith('tld_')]
+    # data = data.drop(columns=tld_columns, errors='ignore')
     
     # Initialize the XGBoost classifier
     model = XGBClassifier(
