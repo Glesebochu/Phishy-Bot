@@ -11,7 +11,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Welcome to Phishy Bot! \n\n" 
         "Use /check <URL> [classifier] to manually check URLs. \n"
-        "Available classifiers: 'baseline', 'advanced'. Default is 'advanced'."
+        "Available classifiers: 'M1', 'M2'. Default is 'M2'."
     )
 
 # Command to handle '/check'
@@ -23,10 +23,10 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     url = context.args[0]
-    classifier = context.args[1] if len(context.args) > 1 else 'advanced'
+    classifier = context.args[1] if len(context.args) > 1 else 'M2'
 
     # Use the specified classifier to analyze the URL
-    if classifier == 'baseline':
+    if classifier == 'M1':
         result = predict_url_baseline(url)
     else:
         result = predict_url_advanced(url)
