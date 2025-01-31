@@ -137,13 +137,14 @@ def predict_url(url):
     predicted_probabilities = model.predict_proba(input_data_scaled)
 
     # Output the results
+    print("\nURL:", url)
     print("\nData Row:")
     print(input_data.iloc[0].to_dict())
     print("Prediction: Malicious" if predictions[0] == 1 else "Prediction: Non-Malicious")
     print(f"Prediction Probabilities: {predicted_probabilities[0]}")
 
     # Return the prediction result
-    return "Malicious" if predictions[0] == 1 else "Non-malicious"
+    return f"Malicious {predicted_probabilities[0][1] * 100:.3f}%" if predictions[0] == 1 else f"Non-malicious {predicted_probabilities[0][0] * 100:.3f}%"
 
 # Main prediction logic
 def main():
