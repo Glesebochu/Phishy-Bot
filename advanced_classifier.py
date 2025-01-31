@@ -6,70 +6,6 @@ from urllib.parse import urlparse
 # Load your trained model
 model = joblib.load("advanced_xgb_model.pkl")
 
-# ------------------------------------------------------
-# 1) List of TLDs from your training data:
-TRAINING_TLDS = [
-    "org",
-    "com",
-    "theshoppe.com",
-    "it",
-    "blogspot.com",
-    "dcs.st-and.ac.uk",
-    "03.ibm.com",
-    "allthelyrics.com",
-    "allvoices.com",
-    "allwwewrestlers.com",
-    "allyoucanread.com",
-    "alpsroads.net",
-    "alternatehistory.com",
-    "alternet.org",
-    "alterthepress.com",
-    "altfg.com",
-    "altiusdirectory.com",
-    "altoonamirror.com",
-    "altosport.com",
-    "altpress.com",
-    "alumni.net",
-    "alumniclass.com",
-    "alwaysontherun.net",
-    "amazon.ca",
-    "amazon.co.uk",
-    "amazon.com",
-    "mylife.com",
-    "mylifeofcrime.wordpress.com",
-    "mylifetime.com",
-    "mylocalservices.us",
-    "mylovedpornstars.com",
-    "mymovies.net",
-    "mynewplace.com",
-    "mynhldraft.com",
-    "mynhltraderumors.com",
-    "ottawasun.com",
-    "ougrizzlies.com",
-    "ourairports.com",
-    "ourbis.ca",
-    "ourfaves.com",
-    "ourhistory.canadiens.com",
-    "youtube.com",
-    "177.22.179",
-    "nl",
-    "000webhostapp.com",
-    "171.169.193:35516",
-    "net",
-    "de",
-    "248.170.218",
-    "top",
-    "ru",
-    "info",
-    "com.br",
-    "200.14.110"
-]
-# TRAINING_TLDS = [
-#     "com", "org", "com.br", "it", "us", "net", "co.uk", "de", "ru", "info", "top", "nl", "ca", "gov", 
-#      "ac.uk", "co.uk", "wordpress.com", 
-#     # etc. Add the entire list your model expects
-# ]
-
 def extract_features_from_url(url: str) -> pd.DataFrame:
     """
     Extract the exact numeric/binary features your model was trained on.
@@ -168,14 +104,16 @@ def predict_url(url: str, threshold: float = 0.5) -> str:
 
 def main():
     test_urls = [
-        "http://www.google.com",
-        "http://malicious-site.com",
-        "http://192.168.0.1",
-        "http://subdomain.example.com",
-        "http://example.com/path?query=1"
+        "www.aloud.com/",
+        "www.google.com/",
+        "www.facebook.com/",
+        "www.malicious-site.com",
+        "192.168.0.1",
+        "www.moneylionvfe.top/login",
+        "www.example.com/path?query=1"
     ]
     
-    threshold = 0.5  # Adjust the threshold as needed
+    threshold = 0.90  # Adjust the threshold as needed
     for url in test_urls:
         result = predict_url(url, threshold)
         print(f"URL: {url} -> Prediction: {result}")
