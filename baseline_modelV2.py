@@ -122,6 +122,16 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_val_scaled = scaler.transform(X_val)
 X_test_scaled = scaler.transform(X_test)
 
+#hyperparameter tuning description and considerations
+# Hyperparameter	Description	                                consideration
+# n_estimators	    Number of decision trees	                More trees improve stability but increase computation time.
+# max_depth	        Maximum depth of each tree	                Limits overfitting by restricting tree complexity.
+# min_samples_split	Minimum samples needed to split a node	    Prevents creating too many small branches.
+# min_samples_leaf	Minimum samples per leaf node	            Ensures leaves have enough data points to generalize well.
+# max_features	    Number of features considered at each split	Controls randomness and feature selection for diversity.
+# class_weight	    Balances classes if dataset is imbalanced	Helps with skewed datasets where one class dominates.
+
+
 # Define Random Forest parameters for search
 rf_params = {
     'n_estimators': [100, 200, 300],
